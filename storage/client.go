@@ -22,6 +22,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"net"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -117,7 +118,9 @@ func (ds *DefaultSender) Send(c *Client, req *http.Request) (resp *http.Response
 			return resp, err
 		}
 		resp, err = c.HTTPClient.Do(rr.Request())
-		if err != nil || !autorest.ResponseHasStatusCode(resp, ds.ValidStatusCodes...) {
+		if e,ok := err.(net.Error); ok && e.Timeout() {
+			// Retry on timeout
+		} else if err != nil || !autorest.ResponseHasStatusCode(resp, ds.ValidStatusCodes...) {
 			return resp, err
 		}
 		autorest.DelayForBackoff(ds.RetryDuration, attempts, req.Cancel)
