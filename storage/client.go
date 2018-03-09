@@ -118,8 +118,8 @@ func (ds *DefaultSender) Send(c *Client, req *http.Request) (resp *http.Response
 			return resp, err
 		}
 		resp, err = c.HTTPClient.Do(rr.Request())
-		if e,ok := err.(net.Error); ok && e.Timeout() {
-			// Retry on timeout
+		if e,ok := err.(net.Error); ok && (e.Timeout() || e.Temporary()) {
+			// Retry on timeout or temporary errors
 		} else if err != nil || !autorest.ResponseHasStatusCode(resp, ds.ValidStatusCodes...) {
 			return resp, err
 		}
