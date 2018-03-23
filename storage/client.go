@@ -34,7 +34,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"syscall"
 
 	"github.com/gilbertchen/azure-sdk-for-go/version"
 	"github.com/Azure/go-autorest/autorest"
@@ -121,8 +120,10 @@ func (ds *DefaultSender) Send(c *Client, req *http.Request) (resp *http.Response
 		resp, err = c.HTTPClient.Do(rr.Request())
 		if e,ok := err.(net.Error); ok && (e.Timeout() || e.Temporary()) {
 			// Retry on timeout or temporary errors
-		} else if e,ok := err.(*net.OpError); ok && e.Err == syscall.EPIPE {
-			// Retry on broken pipe
+		} else if _,ok := err.(*url.Error); ok {
+			// Retry on any url.Error
+		} else if _,ok := err.(*net.OpError); ok {
+			// Retry on any net.OpError
 		} else if err != nil || !autorest.ResponseHasStatusCode(resp, ds.ValidStatusCodes...) {
 			return resp, err
 		}
